@@ -1,0 +1,36 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<!-- intro -->
+
+# Diversity and segregation
+
+<!-- diverstiy and segregation vs it metrics -->
+<!-- it metrics from LE -->
+<!-- my previous BP -->
+
+# The raceland package
+
+<!-- main ideas  -->
+<!-- computational framework -->
+
+# Example calculations
+
+<!-- simple example using external data (or socscape) -->
+
+# Additional features of raceland
+
+<!-- vector data -->
+<!-- different spatial scales -->
+<!-- socscape grids -->
+<!-- we believe it can be used in different problems as well -->
+
+# Summary
+
+The most comprehensive description of the method can be found in the ... article published in Applied Geography.

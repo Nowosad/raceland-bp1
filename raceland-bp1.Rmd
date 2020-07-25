@@ -74,7 +74,7 @@ tm_race
 # tmap_save(tm_race, "figs/tm_race.png", width = 6, height = 1, scale = 0.7)
 ```
 
-# AAA
+# Basic example
 
 ```{r, cache=TRUE}
 rl = get_raceland(race_raster, n = 30, window_size = 10, neighbourhood = 4, fun = "mean", size = 20)
@@ -98,25 +98,11 @@ segregation_map = tm_shape(rl) +
 tmap_arrange(diversity_map, segregation_map)
 ```
 
-## Final results
-
-```{r}
-tm_race
-tmap_arrange(diversity_map, segregation_map, ncol = 1)
-```
-
-# BBB
+# Extended example
 
 ![](figs/fig0framework.png)
 
 ## Racial landscape
-
-```{r}
-# list_raster = list.files(system.file("rast_data", package = "raceland"),
-                         # full.names = TRUE)
-# race_raster = stack(list_raster)
-```
-
 
 ```{r}
 realizations_raster = create_realizations(race_raster, n = 30)

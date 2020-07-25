@@ -1,5 +1,5 @@
 ---
-title: "Untitled"
+title: "A new approach for quantifing diversity and segregation"
 output: html_document
 ---
 
@@ -8,6 +8,8 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 <!-- intro -->
+<!-- ??? -->
+<!-- use the paper as the source -->
 
 # Diversity and segregation
 
@@ -18,11 +20,231 @@ knitr::opts_chunk$set(echo = TRUE)
 # The raceland package
 
 <!-- main ideas  -->
+<!-- no arbitrary divisions -->
 <!-- computational framework -->
+
 
 # Example calculations
 
 <!-- simple example using external data (or socscape) -->
+<!-- chicago data -->
+<!-- steps -->
+
+## Input data
+
+```{r, warning=FALSE, message=FALSE}
+library(raceland)
+library(raster)
+library(sf)
+library(tmap)
+library(dplyr)
+```
+
+```{r, warning=FALSE}
+list_raster = dir("data", pattern = ".tif$", full.names = TRUE)
+race_raster = stack(list_raster)
+```
+
+```{r}
+cincinnati = read_sf("data/cincinnati.gpkg")
+```
+
+```{r}
+tm_race = tm_shape(race_raster) +
+    tm_raster(style = "fisher",
+              n = 10,
+              palette = "viridis",
+              title = "Share (%)") +
+    tm_facets(nrow = 3) +
+    tm_shape(cincinnati) +
+    tm_borders(lwd = 3, col = "black")
+tm_race
+```
+
+```{r, echo=FALSE, message=FALSE}
+# tm_race = tm_shape(race_raster) +
+#     tm_raster(style = "fisher",
+#               n = 10,
+#               palette = "viridis",
+#               title = "Share (%)") +
+#     tm_facets(nrow = 2) +
+#     tm_shape(cincinnati) +
+#     tm_borders(lwd = 3, col = "black") +
+#   tm_layout(outer.margins = 0, legend.outside.size = 0.1)
+# tmap_save(tm_race, "figs/tm_race.png", width = 6, height = 1, scale = 0.7)
+```
+
+# AAA
+
+```{r, cache=TRUE}
+rl = get_raceland(race_raster, n = 30, window_size = 10, neighbourhood = 4, fun = "mean", size = 20)
+```
+
+```{r}
+diversity_map = tm_shape(rl) +
+    tm_polygons(col = "ent",
+                title = "Diversity",
+                style = "cont",
+                palette = "magma") +
+    tm_shape(cincinnati) +
+    tm_borders(lwd = 3, col = "black")
+segregation_map = tm_shape(rl) +
+    tm_polygons(col = "mutinf",
+                title = "Segregation",
+                style = "cont", 
+                palette = "cividis") +
+    tm_shape(cincinnati) +
+    tm_borders(lwd = 3, col = "black")
+tmap_arrange(diversity_map, segregation_map)
+```
+
+## Final results
+
+```{r}
+tm_race
+tmap_arrange(diversity_map, segregation_map, ncol = 1)
+```
+
+# BBB
+
+![](figs/fig0framework.png)
+
+## Racial landscape
+
+```{r}
+# list_raster = list.files(system.file("rast_data", package = "raceland"),
+                         # full.names = TRUE)
+# race_raster = stack(list_raster)
+```
+
+
+```{r}
+realizations_raster = create_realizations(race_raster, n = 30)
+```
+
+```{r}
+my_pal = c("#F16667", "#6EBE44", "#7E69AF", "#C77213", "#F8DF1D")
+tm_realizations = tm_shape(realizations_raster[[1:4]]) +
+    tm_raster(style = "cat",
+              palette = my_pal) +
+    tm_facets(ncol = 2) +
+    tm_shape(cincinnati) +
+    tm_borders(lwd = 3, col = "black") +
+    tm_layout(legend.show = FALSE,
+              panel.labels = paste("Simulation", 1:30))
+tm_realizations
+```
+
+## Racial landscape vizualization
+
+```{r}
+plot_realization(x = realizations_raster[[2]],
+                 y = race_raster,
+                 hex = my_pal)
+```
+
+## Local densities
+
+<!-- takes some time -->
+```{r, cache=TRUE}
+dens_raster = create_densities(realizations_raster,
+                               race_raster,
+                               window_size = 10)
+```
+
+```{r}
+tm_density = tm_shape(dens_raster[[1:4]]) +
+    tm_raster(style = "fisher",
+              n = 10,
+              palette = "viridis",
+              title = "Share (%)") +
+    tm_facets(ncol = 2) +
+    tm_shape(cincinnati) +
+    tm_borders(lwd = 3, col = "black")
+tm_density
+```
+
+## Total diversity and segregation
+
+```{r}
+metr_df = calculate_metrics(x = realizations_raster, 
+                            w = dens_raster, 
+                            neighbourhood = 4,
+                            fun = "mean", 
+                            size = NULL, 
+                            threshold = 1)
+head(metr_df)
+```
+
+```{r}
+metr_df %>% 
+  summarise(mean_ent = mean(ent, na.rm = TRUE),
+  sd_ent = sd(ent, na.rm = TRUE),
+  mean_mutinf = mean(mutinf),
+  sd_mutinf = sd(mutinf))
+```
+
+<!-- Weighted co-occurrence matrix -->
+<!-- exposure matrix -->
+
+## Local diversity and segregation
+
+```{r}
+metr_df_20 = calculate_metrics(x = realizations_raster,
+                               w = dens_raster, 
+                               neighbourhood = 4,
+                               fun = "mean", 
+                               size = 20, 
+                               threshold = 0.75)
+```
+
+```{r}
+smr = metr_df_20 %>%
+  group_by(row, col) %>%
+  summarize(
+    ent_mean = mean(ent, na.rm = TRUE),
+    ent_sd = sd(ent, na.rm = TRUE),
+    mutinf_mean = mean(mutinf, na.rm = TRUE),
+    mutinf_sd = sd(mutinf, na.rm = TRUE)
+  ) %>% 
+  na.omit()
+head(smr)
+```
+
+```{r}
+grid_sf = create_grid(realizations_raster, size = 20)
+```
+
+```{r}
+tm_shape(grid_sf) +
+    tm_polygons()
+```
+
+```{r}
+grid_attr = dplyr::left_join(grid_sf, smr,
+                             by = c("row", "col"))
+```
+
+```{r}
+diversity_map = tm_shape(grid_attr) +
+    tm_polygons(col = "ent_mean",
+                title = "Diversity",
+                style = "cont",
+                palette = "magma") +
+    tm_shape(cincinnati) +
+    tm_borders(lwd = 3, col = "black")
+segregation_map = tm_shape(grid_attr) +
+    tm_polygons(col = "mutinf_mean",
+                title = "Segregation",
+                style = "cont", 
+                palette = "cividis") +
+    tm_shape(cincinnati) +
+    tm_borders(lwd = 3, col = "black")
+tmap_arrange(diversity_map, segregation_map)
+```
+
+
+# Scale-dependency
 
 # Additional features of raceland
 
@@ -34,3 +256,6 @@ knitr::opts_chunk$set(echo = TRUE)
 # Summary
 
 The most comprehensive description of the method can be found in the ... article published in Applied Geography.
+<!-- ... -->
+
+<!-- vignettes -->
